@@ -1,7 +1,7 @@
 RRegrs
 ======
 
-The current tool is a collection of regression tools from R that could be used for searching the best regression models for any dataset. The initial use of the script is finding QSAR models for chemoinformatics / nanotoxicology.
+The current tool is a collection of regression tools from R that could be used to search the best regression models for any dataset. The initial use of the script is aimed at finding QSAR models for chemoinformatics / nanotoxicology.
 
 The full R script will contain:
 1) Loading dataset
@@ -14,4 +14,4 @@ The full R script will contain:
 
 The script will be modular in order to create flexible APIs.
 
-The main authors are part of the National Technical University of Athens (NTUA) and Maastricht University (UM) as nodes of the EU eNanoMapper project.
+The main authors are from the National Technical University of Athens (NTUA) and Maastricht University (UM) joining efforts for the EU eNanoMapper project.
