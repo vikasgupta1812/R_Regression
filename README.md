@@ -13,3 +13,5 @@ The full R script will contain:
 7) Statistics of the best model
 
 The script will be modular in order to create flexible APIs.
+
+The main authors are part of the National Technical University of Athens (NTUA) and Maastricht University (UM) as nodes of the EU eNanoMapper project.
