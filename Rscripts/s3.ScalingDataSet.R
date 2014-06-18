@@ -19,8 +19,8 @@
 
 ScalingDS <- function(s,c,inFileName, outFileName) {
   
-  # Read the tab file using the read table function
-  DataSet <- read.table(inFileName,header=TRUE)
+  # Read the CSV file
+  DataSet <- read.csv(inFileName,header=TRUE)
   
   # DEFAULT scaled dataset = original
   # if other s diffent of 1,2,3 is used, no scaling!
@@ -43,7 +43,7 @@ ScalingDS <- function(s,c,inFileName, outFileName) {
   }
   
   # write the result into a separated file
-  write.table(DataSet.scaled, outFileName, sep="\t",row.names=F, quote=F)  
+  write.csv(DataSet.scaled, outFileName,row.names=F, quote=F)  
 }
 
 
@@ -51,8 +51,8 @@ ScalingDS <- function(s,c,inFileName, outFileName) {
 # ---------------------------------------------------------------
 # TESTING THE FUNCTION
 # ---------------------------------------------------------------
-#OriginalFile="DataResults/dataset.txt"
-#ScaledFile="DataResults/scaled.txt"
+#OriginalFile="DataResults/ds.csv"
+#ScaledFile="DataResults/ds.scaled.csv"
 #s = 1 # type of scaling = 1:standardization, 2:normalization, 3: other to define
 #c = 1 # column to start scaling: 1 = include the dependent variable, 2 = only features
 

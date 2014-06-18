@@ -21,15 +21,15 @@ RemCorrs <- function(cutoff, inFileName, outFileName) {
   library(corrplot) #corrplot: the library to compute correlation matrix.
   library(caret)
   
-  # Read the tab file using the read table function
-  DataSet <- read.table(inFileName,header=TRUE)
+  # Read the CSV dataset file
+  DataSet <- read.csv(inFileName,header=TRUE)
   
   # calculate the correlation matrix for the entire file!
   # !!! NEED TO BE CORRECTED to avoid dependent variable (first column) but to report it!
   corrMat <- cor(DataSet)
-  CorrMatFile= paste(inFileName,".corrMAT.txt",sep='')
+  CorrMatFile= paste(inFileName,".corrMAT.csv",sep='')
   # write correlation matrix as output file
-  write.table(corrMat, CorrMatFile, sep="\t",row.names=F, quote=F)
+  write.csv(corrMat, CorrMatFile, row.names=F, quote=F)
   
   # Plot the matrix, clustering features by correlation index
   # corrplot(corrMat, order = "hclust")
@@ -66,13 +66,12 @@ RemCorrs <- function(cutoff, inFileName, outFileName) {
   dev.off()
   
   # correlation matrix for the rest of the columns after removal
-  CorrMatFile2= paste(inFileName,".SelectedcorrMAT.txt",sep='')
+  CorrMatFile2= paste(inFileName,".corrMAT4Selected.csv",sep='')
   # write correlation matrix as output file
-  write.table(corrMat, CorrMatFile2, sep="\t",row.names=F, quote=F)
+  write.csv(corrMat, CorrMatFile2, row.names=F, quote=F)
   
   # write the new dataset without the correlated features
-  write.table(DataSetFiltered.scale, outFileName, sep="\t",row.names=F, quote=F)
-  
+  write.csv(DataSetFiltered.scale, outFileName, row.names=F, quote=F)
 }
 
 # ---------------------------------------------------------------
