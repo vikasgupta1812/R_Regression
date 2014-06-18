@@ -8,8 +8,8 @@
 # contact: Cristian R Munteanu | BiGCaT - UM | muntisa@gmail.com
 # ======================================================================
 #
-# RRegrs concept:
-# ONE MODULE, ONE INPUT file, AT LEAST ONE OUTPUT file
+# Basic concept: each module is reading input data from files and
+# it writing outputs in files for all details 
 # 
 # (only CSV files)
 # ----------------------------------------------------------------------
@@ -113,7 +113,7 @@ if (fRemCorr==TRUE) {
 }
 
 # -----------------------------------------------------------------------
-# (5) Splits of data into: traing, cv, test
+# (5) Dataset split: Training and Test sets
 # -----------------------------------------------------------------------
 set.seed(1)
 
@@ -139,11 +139,11 @@ write.csv(ds.m.test,outTest,row.names=FALSE)
 # -----------------------------------------------------------------------
 
 # -----------------------------------------------------------------------
-# (7) All Regressions
+# (7) Regressions
 # -----------------------------------------------------------------------
 
 # -----------------------------------------------------------------------
-# (8) Summary top models
+# (8) Top models
 # -----------------------------------------------------------------------
 
 # -----------------------------------------------------------------------
