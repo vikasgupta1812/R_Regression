@@ -46,21 +46,24 @@ cutoff=0.7           # cut off for corralations
 iScaling = 1 # 1 = standardization; 2 = normalization, 3 = other
 iScalCol = 1 # 1: including dependent variable in scaling; 2: only features; any other: no scaling
 # -----------------------------------------------------------------------
-trainFrac  = 3/4 # the fraction of training set from the entire dataset
+# trainFrac  = 3/4 # the fraction of training set from the entire dataset
 #                # 1 - trainFrac = the rest of dataset, the test set
-#
 # -----------------------------------------------------------------------
 # (1) Load dataset and parameters
 # -----------------------------------------------------------------------
 # Data file Parameters
 PathDataSet    = "DataResults"            # dataset folder
 DataFileName   = "ds.csv"                 # input step 1 = ds original file name
-No0NearVarFile = "ds2.No0Var.csv"          # output step 2 = ds without zero near vars
-ScaledFile     = "ds3.scaled.csv"          # output step 3 = scaled ds file name (in the same folder)
-NoCorrFile     = "ds4.scaled.NoCorrs.csv"  # output step 4 = dataset after correction removal
+No0NearVarFile = "ds2.No0Var.csv"         # output step 2 = ds without zero near vars
+ScaledFile     = "ds3.scaled.csv"         # output step 3 = scaled ds file name (in the same folder)
+NoCorrFile     = "ds4.scaled.NoCorrs.csv" # output step 4 = dataset after correction removal
+ResFile        = "RRegresRezults.txt"     # the common output file! 
 
 # Generate path + file name = original dataset
 inFile <- file.path(PathDataSet, DataFileName)
+
+# Set the file with results (append data using: sink(outRegrFile, append = TRUE) !!!)
+outRegrFile <- file.path(PathDataSet,ResFile) # the same folder as the input 
 
 # Load the original dataset
 # (it can contain errors, correlations, near zero variance columns)
@@ -85,7 +88,7 @@ if (fRemNear0Var==TRUE) {
 # (3) Scaling dataset: standardization, normalization, other
 # -----------------------------------------------------------------------
 if (fScaling==TRUE) {
-  print("-> [2] Scaling original dataset ...")
+  print("-> [3] Scaling original dataset ...")
   inFile  <- outFile
   outFile <- file.path(PathDataSet,ScaledFile) # the same folder as input
   
@@ -100,7 +103,7 @@ if (fScaling==TRUE) {
 # (4) Remove correlated features
 # -----------------------------------------------------------------------
 if (fRemCorr==TRUE) {    
-  print("-> [3] Removing correlated features ...")
+  print("-> [4] Removing correlated features ...")
   
   # add s4.RemCorrFeats.R for correlation removal function
   source("s4.RemCorrFeats.R")
@@ -115,24 +118,37 @@ if (fRemCorr==TRUE) {
 # -----------------------------------------------------------------------
 # (5) Dataset split: Training and Test sets
 # -----------------------------------------------------------------------
-set.seed(1)
+
+print("-> [5] Splitting dataset in Training and Test sets ...")
 
 # Load the CORRECTED datest to create a regression model
 # this dataset will use the last output file as the dataset that will be
 # separated into training and test sets and it will be used for regressions
-ds.m <- read.csv(outFile,header=T)
+
+ds.dat0<- read.csv(outFile,header=T)                              # initial dataset from the file (corrected or not)
+ds.indx<- colnames(ds.dat0)[2:dim(ds.dat0)[2]]                    # FEATURE names (no dependent variable)
+ds.dat1<- ds.dat0[1:dim(ds.dat0)[1],2:dim(ds.dat0)[2]]            # dataset as columns
+ds.dat1<- apply(ds.dat1,1,function(x)as.numeric(as.character(x))) # dataset as row vectors to be used with caret!!!
+
+# dependent variable
+net.c<- ds.dat0[,1]
+net.c<- as.numeric(as.character(net.c)) # values
 
 # create TRAIN and TEST sets to build a model
-inTrain <- createDataPartition(1:dim(ds.m)[1], p = trainFrac, list = FALSE)
-ds.m.train <- ds.m[inTrain,]   # TRAIN set
-ds.m.test  <- ds.m[-inTrain,]  # TEST set
+
+set.seed(1)
+# creating dataset for regression models
+my.datf<- as.data.frame(cbind(net.c,t(ds.dat1)))
+inTrain <- createDataPartition(1:dim(my.datf)[1], p = 3/4, list = FALSE)
+my.datf.train<- my.datf[inTrain,]            # TRAIN set         
+my.datf.test <- my.datf[-inTrain,]           # TEST set 
 
 # write the TRAIN and TEST set files
 # the index of each row will in the dataset will not be saved (row.names=F)
 outTrain <- file.path(PathDataSet,"ds5.Train.csv") # the same folder as the input
-write.csv(ds.m.train,outTrain,row.names=FALSE)
+write.csv(my.datf.train,outTrain,row.names=FALSE)
 outTest <- file.path(PathDataSet,"ds5.Test.csv") # the same folder as the input
-write.csv(ds.m.test,outTest,row.names=FALSE) 
+write.csv(my.datf.test,outTest,row.names=FALSE) 
 
 # -----------------------------------------------------------------------
 # (6) Feature selection
@@ -141,6 +157,49 @@ write.csv(ds.m.test,outTest,row.names=FALSE)
 # -----------------------------------------------------------------------
 # (7) Regressions
 # -----------------------------------------------------------------------
+#
+print("-> [7] Run Regressions ...")
+
+# (7.1) glm stepwise - based on AIC
+#       Generalized Linear Model with Stepwise Feature Selection
+# ----------------------------------------------------------------------
+print("-> [7.1] glm stepwise - based on AIC ...")
+
+# specify CV parameters
+ctrl<- trainControl(method = 'repeatedcv', number = 10,repeats = 10,
+                    summaryFunction = defaultSummary)
+
+# Training the model using only training set
+set.seed(2)
+lm.fit<- train(net.c~.,data=my.datf.train,
+               method = 'glmStepAIC', tuneLength = 10, trControl = ctrl,
+               metric = 'RMSE')
+# RESULTS
+#--------------
+# get statistics
+#RMSE = lm.fit$results[,2]
+#Rsquared = lm.fit$results[,3]
+#RMSE_SD = lm.fit$results[,4]
+#RsquaredSD = lm.fit$results[,5]
+
+# RMSE & R^2, for train/ test respectively
+lm.train.res<- getTrainPerf(lm.fit)
+lm.test.res <- postResample(predict(lm.fit,my.datf.test),my.datf.test[,1])
+
+# write RESULTS
+sink(outRegrFile, append = TRUE)
+
+summary(my.datf)
+lm.fit
+predictors(lm.fit)
+lm.train.res
+lm.test.res
+
+sink()
+file.show(outRegrFile)
+
+# TO ADD OTHER STATISTICS !!!!!!!!!!!!!!!!
+
 
 # -----------------------------------------------------------------------
 # (8) Top models

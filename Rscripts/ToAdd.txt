@@ -1,0 +1,2 @@
+- if no scaling and error correction is ON, input file is the original file
+- if no ds split?
