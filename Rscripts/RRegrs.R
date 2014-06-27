@@ -8,10 +8,7 @@
 # contact: Cristian R Munteanu | BiGCaT - UM | muntisa@gmail.com
 # ======================================================================
 #
-# Basic concept: each module is reading input data from files and
-# it writing outputs in files for all details 
-# 
-# (only CSV files)
+# Main input file: CSV
 # ----------------------------------------------------------------------
 # Variable names
 # -----------------------------------------------------------------------
@@ -36,8 +33,9 @@
 # - all the input and output files are placed into the same folder
 # -----------------------------------------------------------------------
 
-# Option Selections
+# Option to run any step
 # -----------------------------------------------------------------------
+fdet = TRUE          # flat to calculate and print details for all the functions
 fRemNear0Var=TRUE    # flag for Removal of near zero variance columns (2)
 fScaling=TRUE        # flag for dataset Scaling                       (3)
 fRemCorr=TRUE        # flag for Removal of correlated columns         (4)
@@ -65,7 +63,8 @@ inFile <- file.path(PathDataSet, DataFileName)
 # Set the file with results (append data using: sink(outRegrFile, append = TRUE) !!!)
 outRegrFile <- file.path(PathDataSet,ResFile) # the same folder as the input 
 
-# Load the original dataset
+# Load the ORIGINAL DATASET
+# -----------------------------
 # (it can contain errors, correlations, near zero variance columns)
 ds <- read.csv(inFile,header=T)
 
@@ -74,14 +73,10 @@ ds <- read.csv(inFile,header=T)
 # -----------------------------------------------------------------------
 if (fRemNear0Var==TRUE) {
   print("-> [2] Removal of near zero variance columns ...")
-  
-  library(caret)
-  
-  ds.var <- nearZeroVar(ds)
-  ds.Rem0NearVar <- ds[,-(ds.var)]
   outFile <- file.path(PathDataSet,No0NearVarFile) # the same folder as input
-  # write the corrected ds file
-  write.csv(ds.Rem0NearVar, outFile,row.names=F, quote=F)  
+  
+  # get the ds without near zero cols
+  ds = RemNear0VarCols(ds,det,outFile)
 }
 
 # -----------------------------------------------------------------------

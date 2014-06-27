@@ -6,30 +6,26 @@
 # USE:
 # ScalingDS([ScalingType],[column to start scaling],[Original File name],[Scaled fime name])
 #
-# s = { 1,2,3 } - type of scaling:
-# 1 = standardization, 2 = normalization, 3 = other
-
+# s = { 1,2,3 } - type of scaling: 1 = standardization, 2 = normalization, 3 = other
 # c = the number of column into the dataset to start scaling
-# if c = 1: included the dependent variable
-# if c = 2: only the features will be scaled
+# - if c = 1: included the dependent variable
+# - if c = 2: only the features will be scaled
 
+# fDet = if we need details    (TRUE/FALSE)
 # inFileName  = file name      (it could include the path)
 # outFileName = new file name  (it could include the path)
 # ------------------------------------------
 
-ScalingDS <- function(s,c,inFileName, outFileName) {
-  
-  # Read the CSV file
-  DataSet <- read.csv(inFileName,header=TRUE)
+ScalingDS <- function(ds,s=1,c=1,fDet=FALSE,outFileName="") {
   
   # DEFAULT scaled dataset = original
   # if other s diffent of 1,2,3 is used, no scaling!
-  DataSet.scaled <- DataSet
+  DataSet.scaled <- ds
   
   # if STADARDIZATION
   if (s==1) {
     # Scale all the features (from column c bacause column 1 is the predictor output)
-    DataSet.scaled <- scale(DataSet[c:ncol(DataSet)],center=TRUE,scale=TRUE)  
+    DataSet.scaled <- scale(ds[c:ncol(ds)],center=TRUE,scale=TRUE)  
   }
   # if NORMALIZATION
   if (s==2) {
@@ -42,19 +38,10 @@ ScalingDS <- function(s,c,inFileName, outFileName) {
     # TO ADD THE CODE ! 
   }
   
-  # write the result into a separated file
-  write.csv(DataSet.scaled, outFileName,row.names=F, quote=F)  
+  # if DETAILS
+  if (fDet ==TRUE) {
+    # write the result into a separated file
+    write.csv(DataSet.scaled, outFileName,row.names=F, quote=F)  
+  }
+  return (as.data.frame(DataSet.scaled))
 }
-
-
-
-# ---------------------------------------------------------------
-# TESTING THE FUNCTION
-# ---------------------------------------------------------------
-#OriginalFile="DataResults/ds.csv"
-#ScaledFile="DataResults/ds.scaled.csv"
-#s = 1 # type of scaling = 1:standardization, 2:normalization, 3: other to define
-#c = 1 # column to start scaling: 1 = include the dependent variable, 2 = only features
-
-#ScalingDS(s,c,OriginalFile,ScaledFile)
-#file.show(ScaledFile)
