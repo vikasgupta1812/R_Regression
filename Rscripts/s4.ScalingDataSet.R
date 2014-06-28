@@ -3,9 +3,6 @@
 # ==========================================
 # contact: Cristian R Munteanu | BiGCaT - UM | muntisa@gmail.com
 #
-# USE:
-# ScalingDS([ScalingType],[column to start scaling],[Original File name],[Scaled fime name])
-#
 # s = { 1,2,3 } - type of scaling: 1 = standardization, 2 = normalization, 3 = other
 # c = the number of column into the dataset to start scaling
 # - if c = 1: included the dependent variable

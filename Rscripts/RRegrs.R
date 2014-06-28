@@ -4,10 +4,8 @@
 # Best regression models for one dataset using R methods
 # Developed as tool for nano-toxicity QSAR models
 # NTUA and UM groups
-# 
 # contact: Cristian R Munteanu | BiGCaT - UM | muntisa@gmail.com
 # ======================================================================
-#
 # Main input file: CSV
 # ----------------------------------------------------------------------
 # Variable names
@@ -32,95 +30,45 @@
 # before and after the correlation removal
 # - all the input and output files are placed into the same folder
 # -----------------------------------------------------------------------
-
 # Option to run any step
 # -----------------------------------------------------------------------
-fdet = TRUE          # flat to calculate and print details for all the functions
-fRemNear0Var=TRUE    # flag for Removal of near zero variance columns (2)
+fDet = TRUE          # flag to calculate and print details for all the functions
+fFilters=TRUE        # flag to apply filters                          (2)
 fScaling=TRUE        # flag for dataset Scaling                       (3)
-fRemCorr=TRUE        # flag for Removal of correlated columns         (4)
+fRemNear0Var=TRUE    # flag for Removal of near zero variance columns (4)
+fRemCorr=TRUE        # flag for Removal of correlated columns         (5)
+fFeatureSel=TRUE     # flag for selection before the regression       (7)
 cutoff=0.7           # cut off for corralations
 # -----------------------------------------------------------------------
-iScaling = 1 # 1 = standardization; 2 = normalization, 3 = other
-iScalCol = 1 # 1: including dependent variable in scaling; 2: only features; any other: no scaling
+iScaling = 1 # 1 = standardization; 2 = normalization, 3 = other; any other: no scaling
+iScalCol = 1 # 1: including dependent variable in scaling; 2: only all features; etc.
 # -----------------------------------------------------------------------
-# trainFrac  = 3/4 # the fraction of training set from the entire dataset
+trainFrac  = 3/4 # the fraction of training set from the entire dataset
 #                # 1 - trainFrac = the rest of dataset, the test set
 # -----------------------------------------------------------------------
 # (1) Load dataset and parameters
 # -----------------------------------------------------------------------
-# Data file Parameters
+# (1.1) PARAMETERS
 PathDataSet    = "DataResults"            # dataset folder
 DataFileName   = "ds.csv"                 # input step 1 = ds original file name
-No0NearVarFile = "ds2.No0Var.csv"         # output step 2 = ds without zero near vars
-ScaledFile     = "ds3.scaled.csv"         # output step 3 = scaled ds file name (in the same folder)
-NoCorrFile     = "ds4.scaled.NoCorrs.csv" # output step 4 = dataset after correction removal
+No0NearVarFile = "ds3.No0Var.csv"         # output step 3 = ds without zero near vars
+ScaledFile     = "ds4.scaled.csv"         # output step 4 = scaled ds file name (in the same folder)
+NoCorrFile     = "ds5.scaled.NoCorrs.csv" # output step 5 = dataset after correction removal
 ResFile        = "RRegresRezults.txt"     # the common output file! 
+
+glmFile        = "glm.res.txt"
 
 # Generate path + file name = original dataset
 inFile <- file.path(PathDataSet, DataFileName)
-
 # Set the file with results (append data using: sink(outRegrFile, append = TRUE) !!!)
 outRegrFile <- file.path(PathDataSet,ResFile) # the same folder as the input 
 
-# Load the ORIGINAL DATASET
+# (1.2) Load the ORIGINAL DATASET
 # -----------------------------
 # (it can contain errors, correlations, near zero variance columns)
-ds <- read.csv(inFile,header=T)
+ds.dat0 <- read.csv(inFile,header=T)                              # original dataset frame
 
-# -----------------------------------------------------------------------
-# (2) Remove near zero variance columns
-# -----------------------------------------------------------------------
-if (fRemNear0Var==TRUE) {
-  print("-> [2] Removal of near zero variance columns ...")
-  outFile <- file.path(PathDataSet,No0NearVarFile) # the same folder as input
-  
-  # get the ds without near zero cols
-  ds = RemNear0VarCols(ds,det,outFile)
-}
-
-# -----------------------------------------------------------------------
-# (3) Scaling dataset: standardization, normalization, other
-# -----------------------------------------------------------------------
-if (fScaling==TRUE) {
-  print("-> [3] Scaling original dataset ...")
-  inFile  <- outFile
-  outFile <- file.path(PathDataSet,ScaledFile) # the same folder as input
-  
-  # add s3.ScalingDataSet.R for scaling function
-  source("s3.ScalingDataSet.R")
-  
-  # run fuction for scaling input dataset file
-  ScalingDS(iScaling,iScalCol,inFile,outFile)
-}
-
-# -----------------------------------------------------------------------
-# (4) Remove correlated features
-# -----------------------------------------------------------------------
-if (fRemCorr==TRUE) {    
-  print("-> [4] Removing correlated features ...")
-  
-  # add s4.RemCorrFeats.R for correlation removal function
-  source("s4.RemCorrFeats.R")
-  
-  inFile  <- outFile
-  outFile <- file.path(PathDataSet,NoCorrFile) # the same folder as the input
-  
-  # run function to remove the correlations between the features
-  RemCorrs(cutoff,inFile,outFile)
-}
-
-# -----------------------------------------------------------------------
-# (5) Dataset split: Training and Test sets
-# -----------------------------------------------------------------------
-
-print("-> [5] Splitting dataset in Training and Test sets ...")
-
-# Load the CORRECTED datest to create a regression model
-# this dataset will use the last output file as the dataset that will be
-# separated into training and test sets and it will be used for regressions
-
-ds.dat0<- read.csv(outFile,header=T)                              # initial dataset from the file (corrected or not)
+# resolving the text to number errors for future calculations
 ds.indx<- colnames(ds.dat0)[2:dim(ds.dat0)[2]]                    # FEATURE names (no dependent variable)
 ds.dat1<- ds.dat0[1:dim(ds.dat0)[1],2:dim(ds.dat0)[2]]            # dataset as columns
 ds.dat1<- apply(ds.dat1,1,function(x)as.numeric(as.character(x))) # dataset as row vectors to be used with caret!!!
@@ -128,78 +76,78 @@ ds.dat1<- apply(ds.dat1,1,function(x)as.numeric(as.character(x))) # dataset as r
 # dependent variable
 net.c<- ds.dat0[,1]
 net.c<- as.numeric(as.character(net.c)) # values
-
-# create TRAIN and TEST sets to build a model
-
-set.seed(1)
-# creating dataset for regression models
-my.datf<- as.data.frame(cbind(net.c,t(ds.dat1)))
-inTrain <- createDataPartition(1:dim(my.datf)[1], p = 3/4, list = FALSE)
-my.datf.train<- my.datf[inTrain,]            # TRAIN set         
-my.datf.test <- my.datf[-inTrain,]           # TEST set 
-
-# write the TRAIN and TEST set files
-# the index of each row will in the dataset will not be saved (row.names=F)
-outTrain <- file.path(PathDataSet,"ds5.Train.csv") # the same folder as the input
-write.csv(my.datf.train,outTrain,row.names=FALSE)
-outTest <- file.path(PathDataSet,"ds5.Test.csv") # the same folder as the input
-write.csv(my.datf.test,outTest,row.names=FALSE) 
+# full ds frame with training and test
+ds<- as.data.frame(cbind(net.c,t(ds.dat1)))
 
 # -----------------------------------------------------------------------
-# (6) Feature selection
+# (2) FILTERS
 # -----------------------------------------------------------------------
 
 # -----------------------------------------------------------------------
-# (7) Regressions
+# (3) Remove near zero variance columns
+# -----------------------------------------------------------------------
+if (fRemNear0Var==TRUE) {
+  print("-> [3] Removal of near zero variance columns ...")
+  outFile <- file.path(PathDataSet,No0NearVarFile) # the same folder as input  
+  
+  # get the ds without near zero cols 
+  source("s3.RemNearZeroVar.R")                    # add function
+  ds <- RemNear0VarCols(ds,fDet,outFile)           # inputs: ds, flag for details, output file
+}
+
+# -----------------------------------------------------------------------
+# (4) Scaling dataset: standardization, normalization, other
+# -----------------------------------------------------------------------
+if (fScaling==TRUE) {
+  print("-> [4] Scaling original dataset ...")
+  outFile <- file.path(PathDataSet,ScaledFile)       # the same folder as input
+  
+  # run fuction for scaling input dataset file
+  source("s4.ScalingDataSet.R")                      # add function
+  ds <- ScalingDS(ds,iScaling,iScalCol,fDet,outFile) # inputs: ds, type of scaling, flag for details, starting column, output file
+}
+
+# -----------------------------------------------------------------------
+# (5) Remove correlated features
+# -----------------------------------------------------------------------
+if (fRemCorr==TRUE) {    
+  print("-> [5] Removing correlated features ...") 
+  outFile <- file.path(PathDataSet,NoCorrFile)    # the same folder as the input
+  
+  # run function to remove the correlations between the features
+  source("s5.RemCorrFeats.R")                     # add function
+  ds <- RemCorrs(ds,fDet,cutoff,outFile)
+}
+
+# -----------------------------------------------------------------------
+# (6) Dataset split: Training and Test sets
+# -----------------------------------------------------------------------
+print("-> [6] Splitting dataset in Training and Test sets ...")
+
+source("s6.DsSplit.R")                   # add function
+dsList <- DsSplit(ds,trainFrac,fDet,PathDataSet)   # return a list with 2 datasets = dsList$train, dsList$test
+# get train and test from the resulted list
+ds.train <- dsList$train
+ds.test <- dsList$test
+
+# -----------------------------------------------------------------------
+# (7) Feature selection
+# -----------------------------------------------------------------------
+
+# -----------------------------------------------------------------------
+# (8) Regressions
 # -----------------------------------------------------------------------
 #
-print("-> [7] Run Regressions ...")
+print("-> [8] Run Regressions ...")
 
-# (7.1) glm stepwise - based on AIC
+# (8.1) glm stepwise - based on AIC
 #       Generalized Linear Model with Stepwise Feature Selection
 # ----------------------------------------------------------------------
-print("-> [7.1] glm stepwise - based on AIC ...")
+print("-> [8.1] glm stepwise - based on AIC ...")
+outFile <- file.path(PathDataSet,glmFile)             # the same folder as the input
 
-# specify CV parameters
-ctrl<- trainControl(method = 'repeatedcv', number = 10,repeats = 10,
-                    summaryFunction = defaultSummary)
+source("s8.1.GLM.R")                                  # add function
+my.stats<- GLMreg(ds,ds.train,ds.test,fDet,outFile) 
 
-# Training the model using only training set
-set.seed(2)
-lm.fit<- train(net.c~.,data=my.datf.train,
-               method = 'glmStepAIC', tuneLength = 10, trControl = ctrl,
-               metric = 'RMSE')
-# RESULTS
-#--------------
-# get statistics
-#RMSE = lm.fit$results[,2]
-#Rsquared = lm.fit$results[,3]
-#RMSE_SD = lm.fit$results[,4]
-#RsquaredSD = lm.fit$results[,5]
-
-# RMSE & R^2, for train/ test respectively
-lm.train.res<- getTrainPerf(lm.fit)
-lm.test.res <- postResample(predict(lm.fit,my.datf.test),my.datf.test[,1])
-
-# write RESULTS
-sink(outRegrFile, append = TRUE)
-
-summary(my.datf)
-lm.fit
-predictors(lm.fit)
-lm.train.res
-lm.test.res
-
-sink()
-file.show(outRegrFile)
-
-# TO ADD OTHER STATISTICS !!!!!!!!!!!!!!!!
-
-
-# -----------------------------------------------------------------------
-# (8) Top models
-# -----------------------------------------------------------------------
-
-# -----------------------------------------------------------------------
-# (9) Best model statistics
-# -----------------------------------------------------------------------
+# test the output from GLM
+str(my.stats)

@@ -3,9 +3,6 @@
 # ==========================================
 # contact: Cristian R Munteanu | BiGCaT - UM | muntisa@gmail.com
 #
-# USE:
-# RemNear0VarCols([Frama dataset],[details flag],[output file name])
-#
 # inputs:
 # - ds = dataset frame
 # - fDet = flag for detais (TRUE/FALSE)
